@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: handwriting-backend
+    runtime: python3
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    rootDir: backend
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: WORKSHEET_ALIGNMENT_URL
+        sync: false
+      - key: WORKSHEET_SPACING_URL
+        sync: false
+      - key: WORKSHEET_CURVES_URL
+        sync: false
+
+  - type: web
+    name: handwriting-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        sync: false

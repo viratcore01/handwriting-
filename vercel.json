@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://handwriting-mw6s.onrender.com/$1"
+      "destination": "https://handwriting-mw6s.onrender.com/api/$1"
     },
     {
       "source": "/(.*)",

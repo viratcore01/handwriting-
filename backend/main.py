@@ -184,7 +184,7 @@ async def create_scan(student_id: str, file: UploadFile = File(...)):
     scores = get_gemini_scores(image_bytes) if GEMINI_API_KEY else FALLBACK_RESULT
 
     scan_data = {
-        "id": str(uuid.uuid4()),
+        "id": "scan_" + uuid.uuid4().hex[:12],
         "student_id": student_id,
         "image_url": public_url,
         "alignment": scores.alignment,

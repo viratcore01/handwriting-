@@ -2,22 +2,22 @@
 
 -- Create classrooms table
 CREATE TABLE IF NOT EXISTS classrooms (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  id text PRIMARY KEY DEFAULT 'class_' || substr(md5(random()::text), 1, 8),
   name text NOT NULL,
   teacher_name text
 );
 
 -- Create students table
 CREATE TABLE IF NOT EXISTS students (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  id text PRIMARY KEY DEFAULT 'student_' || substr(md5(random()::text), 1, 8),
   name text NOT NULL,
-  classroom_id uuid REFERENCES classrooms(id)
+  classroom_id text REFERENCES classrooms(id)
 );
 
 -- Create scans table
 CREATE TABLE IF NOT EXISTS scans (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  student_id uuid REFERENCES students(id),
+  id text PRIMARY KEY DEFAULT 'scan_' || substr(md5(random()::text), 1, 12),
+  student_id text REFERENCES students(id),
   image_url text,
   alignment int,
   spacing int,
@@ -31,14 +31,14 @@ CREATE TABLE IF NOT EXISTS scans (
 
 -- Seed demo data
 INSERT INTO classrooms (id, name, teacher_name) VALUES
-  ('00000000-0000-0000-0000-000000000001', 'Demo Class 1', 'Ms. Johnson')
+  ('c1', 'Demo Class 1', 'Ms. Johnson')
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO students (id, name, classroom_id) VALUES
-  ('00000000-0000-0000-0000-000000000011', 'Aarav K.', '00000000-0000-0000-0000-000000000001'),
-  ('00000000-0000-0000-0000-000000000012', 'Sara M.', '00000000-0000-0000-0000-000000000001'),
-  ('00000000-0000-0000-0000-000000000013', 'Diya P.', '00000000-0000-0000-0000-000000000001'),
-  ('00000000-0000-0000-0000-000000000014', 'Kabir S.', '00000000-0000-0000-0000-000000000001')
+  ('s0', 'Aarav K.', 'c1'),
+  ('s1', 'Sara M.', 'c1'),
+  ('s2', 'Diya P.', 'c1'),
+  ('s3', 'Kabir S.', 'c1')
 ON CONFLICT (id) DO NOTHING;
 
 -- Create storage bucket for scans

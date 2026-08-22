@@ -5,9 +5,13 @@ from typing import Optional, List
 import os
 import json
 import uuid
+import base64
 from datetime import datetime
+from dotenv import load_dotenv
 from supabase import create_client, Client
-import google.generativeai as genai
+import httpx
+
+load_dotenv()
 
 app = FastAPI(title="Adaptive Handwriting Coach API")
 
@@ -27,8 +31,7 @@ supabase = None
 if SUPABASE_URL and SUPABASE_KEY and not SUPABASE_KEY.startswith("fake"):
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
+GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
 
 
 class ScanResult(BaseModel):
@@ -80,7 +83,6 @@ FALLBACK_RESULT = ScanResult(
 
 
 def get_gemini_scores(image_bytes: bytes) -> ScanResult:
-    model = genai.GenerativeModel("gemini-1.5-flash")
     prompt = """Analyze this handwriting worksheet image. Rate three skills from 0-100:
 1. alignment: How level the writing sits on the line
 2. spacing: Consistency of gaps between letters and words
@@ -91,27 +93,48 @@ Return ONLY valid JSON with these exact keys:
 
 Do not include any other text or markdown formatting."""
 
+    payload = {
+        "contents": [
+            {
+                "parts": [
+                    {"text": prompt},
+                    {
+                        "inlineData": {
+                            "mimeType": "image/jpeg",
+                            "data": base64.b64encode(image_bytes).decode("utf-8"),
+                        }
+                    },
+                ]
+            }
+        ],
+        "generationConfig": {
+            "temperature": 0.2,
+            "maxOutputTokens": 300,
+        },
+    }
+
     try:
-        response = model.generate_content(
-            [prompt, {"mime_type": "image/jpeg", "data": image_bytes}],
-            generation_config=genai.types.GenerationConfig(
-                temperature=0.2,
-                max_output_tokens=300,
-            ),
-        )
-        text = response.text.strip()
+        with httpx.Client(timeout=30.0) as client:
+            response = client.post(
+                f"{GEMINI_URL}?key={GEMINI_API_KEY}",
+                json=payload,
+            )
+            response.raise_for_status()
+            data = response.json()
+
+        text = data["candidates"][0]["content"]["parts"][0]["text"].strip()
         if text.startswith("```"):
             text = text.split("```")[1]
             if text.startswith("json"):
                 text = text[4:]
-        data = json.loads(text.strip())
+        parsed = json.loads(text.strip())
         scores = ScanResult(
-            alignment=max(0, min(100, int(data.get("alignment", 70)))),
-            spacing=max(0, min(100, int(data.get("spacing", 70)))),
-            curves=max(0, min(100, int(data.get("curves", 70)))),
-            explanation_alignment=data.get("explanation_alignment", "Keep writing level on the line."),
-            explanation_spacing=data.get("explanation_spacing", "Maintain even gaps between letters."),
-            explanation_curves=data.get("explanation_curves", "Practice smooth rounded strokes."),
+            alignment=max(0, min(100, int(parsed.get("alignment", 70)))),
+            spacing=max(0, min(100, int(parsed.get("spacing", 70)))),
+            curves=max(0, min(100, int(parsed.get("curves", 70)))),
+            explanation_alignment=parsed.get("explanation_alignment", "Keep writing level on the line."),
+            explanation_spacing=parsed.get("explanation_spacing", "Maintain even gaps between letters."),
+            explanation_curves=parsed.get("explanation_curves", "Practice smooth rounded strokes."),
             is_fallback=False,
         )
         return scores

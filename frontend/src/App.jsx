@@ -8,7 +8,7 @@ import Progress from './pages/Progress'
 import TeacherDashboard from './pages/TeacherDashboard'
 import StudentProfile from './pages/StudentProfile'
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const API_BASE = import.meta.env.VITE_API_URL || '/api'
 
 export { API_BASE }
 

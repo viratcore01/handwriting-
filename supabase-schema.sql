@@ -41,6 +41,11 @@ INSERT INTO students (id, name, classroom_id) VALUES
   ('s3', 'Kabir S.', 'c1')
 ON CONFLICT (id) DO NOTHING;
 
+-- Disable RLS for MVP backend access
+ALTER TABLE classrooms DISABLE ROW LEVEL SECURITY;
+ALTER TABLE students DISABLE ROW LEVEL SECURITY;
+ALTER TABLE scans DISABLE ROW LEVEL SECURITY;
+
 -- Create storage bucket for scans
 INSERT INTO storage.buckets (id, name, public) VALUES ('scans', 'scans', true) ON CONFLICT (id) DO NOTHING;
 

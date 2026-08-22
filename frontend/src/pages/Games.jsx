@@ -235,8 +235,9 @@ export default function Games() {
   const [toast, setToast] = useState('')
   const [banner, setBanner] = useState('Ready when you are')
   const [bannerColor, setBannerColor] = useState('green')
-  const [scores, setScores] = useState(null)
   const [gameDone, setGameDone] = useState(false)
+  const canvasRef = useRef(null)
+  const gameStateRef = useRef(null)
 
   const games = [
     { key: 'spiral', title: 'Galaxy Spiral', desc: 'Trace from the center out to the edge, following the guide path.' },
@@ -250,12 +251,11 @@ export default function Games() {
 
   const advanceGame = useCallback(() => {
     if (gameIndex < games.length - 1) {
-      setGameIndex(gameIndex + 1)
+      setGameIndex((i) => i + 1)
       setToast('')
       setBanner('Ready when you are')
       setBannerColor('green')
       setGameDone(false)
-      setScores(null)
     } else {
       setGameDone(true)
     }
@@ -267,6 +267,30 @@ export default function Games() {
     setBannerColor('green')
     setGameDone(false)
   }, [])
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas || gameDone) return
+
+    const ctx = canvas.getContext('2d')
+    let cleanup = null
+
+    if (currentGame.key === 'spiral') {
+      cleanup = mountSpiralGame(canvas, ctx, { setBanner, setBannerColor, setToast, advanceGame, resetGame, inputType })
+    } else if (currentGame.key === 'bug') {
+      cleanup = mountBugGame(canvas, ctx, { setBanner, setBannerColor, setToast, advanceGame, resetGame, inputType })
+    } else if (currentGame.key === 'wand') {
+      cleanup = mountWandGame(canvas, ctx, { setBanner, setBannerColor, setToast, advanceGame, resetGame })
+    } else if (currentGame.key === 'sentence') {
+      cleanup = mountSentenceGame(canvas, ctx, { setBanner, setBannerColor, setToast, advanceGame, resetGame })
+    } else if (currentGame.key === 'paper') {
+      cleanup = mountPaperGame(canvas, ctx, { setBanner, setBannerColor, setToast, advanceGame, resetGame })
+    }
+
+    return () => {
+      if (cleanup && typeof cleanup === 'function') cleanup()
+    }
+  }, [gameIndex, gameDone, inputType, advanceGame, resetGame, setBanner, setBannerColor, setToast])
 
   return (
     <div className="max-w-4xl mx-auto p-6 animate-fade">
@@ -296,14 +320,7 @@ export default function Games() {
           <p className="muted" style={{ margin: '0 0 16px', fontSize: '14px' }}>{currentGame.desc}</p>
 
           <div className="canvas-shell mb-4">
-            <canvas ref={(canvas) => {
-              if (!canvas) return
-              if (currentGame.key === 'spiral') mountSpiralGame(canvas, { setBanner, setBannerColor, setToast, advanceGame, resetGame, inputType })
-              else if (currentGame.key === 'bug') mountBugGame(canvas, { setBanner, setBannerColor, setToast, advanceGame, resetGame, inputType })
-              else if (currentGame.key === 'wand') mountWandGame(canvas, { setBanner, setBannerColor, setToast, advanceGame, resetGame, inputType })
-              else if (currentGame.key === 'sentence') mountSentenceGame(canvas, { setBanner, setBannerColor, setToast, advanceGame, resetGame, inputType })
-              else if (currentGame.key === 'paper') mountPaperGame(canvas, { setBanner, setBannerColor, setToast, advanceGame, resetGame })
-            }} width="600" height="600" />
+            <canvas ref={canvasRef} width="600" height="600" />
             <div className="coach-banner">
               <span className={`dot ${bannerColor}`}></span> {banner}
             </div>
@@ -321,11 +338,10 @@ export default function Games() {
   )
 }
 
-function mountSpiralGame(canvas, helpers) {
+function mountSpiralGame(canvas, ctx, helpers) {
   const { setBanner, setBannerColor, setToast, advanceGame, resetGame, inputType } = helpers
-  const ctx = canvas.getContext('2d')
   const cx = 300, cy = 300, maxR = 230, ideal = generateSpiral(cx, cy, maxR, 3, 420)
-  let drawing = false, points = []
+  let drawing = false, points = [], raf = null
 
   function drawBase() {
     ctx.clearRect(0, 0, 600, 600)
@@ -387,12 +403,17 @@ function mountSpiralGame(canvas, helpers) {
   canvas.addEventListener('pointerdown', pointerDown)
   canvas.addEventListener('pointermove', pointerMove)
   canvas.addEventListener('pointerup', pointerUp)
-  resetGame()
+
+  return () => {
+    canvas.removeEventListener('pointerdown', pointerDown)
+    canvas.removeEventListener('pointermove', pointerMove)
+    canvas.removeEventListener('pointerup', pointerUp)
+    drawing = false
+  }
 }
 
-function mountBugGame(canvas, helpers) {
+function mountBugGame(canvas, ctx, helpers) {
   const { setBanner, setBannerColor, setToast, advanceGame, resetGame, inputType } = helpers
-  const ctx = canvas.getContext('2d')
   const cx = 300, cy = 300, w = 220, h = 170
   let running = false, startT = null, raf = null, trail = [], playerPoints = []
   const DURATION = 8
@@ -479,11 +500,16 @@ function mountBugGame(canvas, helpers) {
   })
   setBanner('Tap on the bug to start')
   setBannerColor('green')
+
+  return () => {
+    running = false
+    cancelAnimationFrame(raf)
+    canvas.removeEventListener('pointermove', pointerMove)
+  }
 }
 
-function mountWandGame(canvas, helpers) {
+function mountWandGame(canvas, ctx, helpers) {
   const { setBanner, setBannerColor, setToast, advanceGame, resetGame } = helpers
-  const ctx = canvas.getContext('2d')
   const cx = 300, cy = 300, R = 190
   const idealRune = generateRune(cx, cy, R)
   let drawing = false, points = []
@@ -522,9 +548,6 @@ function mountWandGame(canvas, helpers) {
     ctx.clearRect(0, 0, 600, 600)
     setBanner('Your turn — trace the rune from memory!')
     setBannerColor('amber')
-    canvas.addEventListener('pointerdown', onDown)
-    canvas.addEventListener('pointermove', onMove)
-    canvas.addEventListener('pointerup', onUp)
   }
 
   function onDown(e) {
@@ -566,12 +589,20 @@ function mountWandGame(canvas, helpers) {
     setTimeout(advanceGame, 500)
   }
 
-  resetGame()
+  canvas.addEventListener('pointerdown', onDown)
+  canvas.addEventListener('pointermove', onMove)
+  canvas.addEventListener('pointerup', onUp)
+
+  return () => {
+    canvas.removeEventListener('pointerdown', onDown)
+    canvas.removeEventListener('pointermove', onMove)
+    canvas.removeEventListener('pointerup', onUp)
+    drawing = false
+  }
 }
 
-function mountSentenceGame(canvas, helpers) {
+function mountSentenceGame(canvas, ctx, helpers) {
   const { setBanner, setBannerColor, setToast, advanceGame, resetGame } = helpers
-  const ctx = canvas.getContext('2d')
   const WORD = 'HERO'
   const letterStrokes = WORD.split('').map((l, idx) => {
     const charStrokes = generateLetterStrokes(l, 600)
@@ -597,11 +628,11 @@ function mountSentenceGame(canvas, helpers) {
   let strokes = [], current = null
   const flatGuide = letterStrokes.flat()
 
-  canvas.addEventListener('pointerdown', (e) => {
+  function onDown(e) {
     canvas.setPointerCapture(e.pointerId)
     current = [canvasPointFromEvent(e, canvas)]
-  })
-  canvas.addEventListener('pointermove', (e) => {
+  }
+  function onMove(e) {
     if (!current) return
     const p = canvasPointFromEvent(e, canvas)
     const prev = current[current.length - 1]
@@ -621,15 +652,19 @@ function mountSentenceGame(canvas, helpers) {
     ctx.stroke()
     setBanner(good ? 'On the letter!' : 'Guide it back')
     setBannerColor(good ? 'green' : 'amber')
-  })
-  canvas.addEventListener('pointerup', () => {
+  }
+  function onUp() {
     if (!current) return
     if (current.length >= 4) strokes.push(current)
     current = null
-  })
+  }
+
+  canvas.addEventListener('pointerdown', onDown)
+  canvas.addEventListener('pointermove', onMove)
+  canvas.addEventListener('pointerup', onUp)
 
   setTimeout(() => {
-    const controls = canvas.parentElement.querySelector('.game-controls')
+    const controls = canvas.parentElement?.querySelector('.game-controls')
     if (controls) {
       const doneBtn = document.createElement('button')
       doneBtn.className = 'btn btn-mint'
@@ -648,12 +683,18 @@ function mountSentenceGame(canvas, helpers) {
     }
   }, 100)
 
-  resetGame()
+  return () => {
+    canvas.removeEventListener('pointerdown', onDown)
+    canvas.removeEventListener('pointermove', onMove)
+    canvas.removeEventListener('pointerup', onUp)
+    strokes = []
+    current = null
+  }
 }
 
-function mountPaperGame(canvas, helpers) {
+function mountPaperGame(canvas, ctx, helpers) {
   const { setBanner, setBannerColor, setToast, advanceGame, resetGame } = helpers
-  const ctx = canvas.getContext('2d')
+
   ctx.fillStyle = '#FAFAFA'
   ctx.fillRect(0, 0, 600, 450)
   ctx.strokeStyle = '#CBD5E1'
@@ -675,7 +716,7 @@ function mountPaperGame(canvas, helpers) {
   setBannerColor('green')
 
   setTimeout(() => {
-    const controls = canvas.parentElement.querySelector('.game-controls')
+    const controls = canvas.parentElement?.querySelector('.game-controls')
     if (controls) {
       const analyzeBtn = document.createElement('button')
       analyzeBtn.className = 'btn btn-primary'
@@ -693,7 +734,9 @@ function mountPaperGame(canvas, helpers) {
     }
   }, 100)
 
-  resetGame()
+  return () => {
+    // nothing to cleanup for static paper game
+  }
 }
 
 function canvasPointFromEvent(e, canvas) {

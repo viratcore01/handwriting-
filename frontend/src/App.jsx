@@ -7,6 +7,7 @@ import Practice from './pages/Practice'
 import Progress from './pages/Progress'
 import TeacherDashboard from './pages/TeacherDashboard'
 import StudentProfile from './pages/StudentProfile'
+import ParentView from './pages/ParentView'
 
 const API_BASE = import.meta.env.VITE_API_URL || '/'
 
@@ -24,6 +25,7 @@ export default function App() {
         <Route path="/progress" element={<Progress />} />
         <Route path="/teacher" element={<TeacherDashboard />} />
         <Route path="/student/:studentId" element={<StudentProfile />} />
+        <Route path="/parent" element={<ParentView />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>

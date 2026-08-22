@@ -55,6 +55,13 @@ export default function Results() {
       )}
       <p className="text-ink-soft mb-6">Here is how the worksheet scored across three key skills.</p>
 
+      {scan.image_url && (
+        <div className="card mb-6">
+          <div className="eyebrow mb-2">Scanned Worksheet</div>
+          <img src={scan.image_url} alt="Scanned worksheet" className="w-full max-h-64 object-contain rounded-xl" />
+        </div>
+      )}
+
       <div className="space-y-5 mb-8">
         {skills.map(skill => (
           <div key={skill.key} className="card">

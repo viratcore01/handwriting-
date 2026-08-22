@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { API_BASE } from '../App'
 
@@ -27,6 +27,7 @@ export default function Progress() {
 
   return (
     <div className="max-w-4xl mx-auto p-6 animate-fade">
+      <button onClick={() => navigate(-1)} className="back-link mb-4">← Back</button>
       <h1 className="text-3xl font-bold mb-1">Progress Chart</h1>
       <p className="text-ink-soft mb-6">Track improvement across scans over time.</p>
 

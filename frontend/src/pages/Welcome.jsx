@@ -8,6 +8,8 @@ export default function Welcome() {
   const handleContinue = () => {
     if (role === 'teacher') {
       navigate('/teacher')
+    } else if (role === 'parent') {
+      navigate('/parent')
     } else {
       navigate('/home')
     }
@@ -42,6 +44,13 @@ export default function Welcome() {
           >
             <div className="text-lg">👩‍🏫 Teacher</div>
             <div className="text-sm text-ink-soft font-normal">View class heatmap and override scores</div>
+          </button>
+          <button
+            onClick={() => setRole('parent')}
+            className={`w-full p-4 rounded-2xl border-2 text-left font-semibold transition-all ${role === 'parent' ? 'border-indigo bg-lavender' : 'border-line bg-surface hover:border-indigo/30'}`}
+          >
+            <div className="text-lg">👨‍👩‍👧 Parent</div>
+            <div className="text-sm text-ink-soft font-normal">View plain-language progress summary</div>
           </button>
         </div>
 

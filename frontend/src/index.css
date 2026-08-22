@@ -106,3 +106,92 @@
 @keyframes spin { to { transform: rotate(360deg); } }
 .animate-fade { animation: fade 0.35s ease; }
 .animate-spin-slow { animation: spin 1s linear infinite; }
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-soft);
+  font-weight: 700;
+  font-size: 13px;
+  margin-bottom: 14px;
+  background: none;
+  border: none;
+  padding: 6px 0;
+  cursor: pointer;
+}
+.back-link:hover { color: var(--indigo); }
+
+.protocol-steps {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.step-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--lavender);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+.step-chip.active { background: var(--indigo); color: #fff; }
+.step-chip.done { background: var(--mint); color: #04382A; }
+
+.letter-picker {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 10px 0;
+}
+.letter-chip {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  border: 2px solid var(--line);
+  background: #fff;
+  font-family: 'Baloo 2', sans-serif;
+  font-weight: 800;
+  font-size: 18px;
+  color: var(--ink-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.letter-chip:hover, .letter-chip.active {
+  border-color: var(--indigo);
+  background: var(--indigo);
+  color: #fff;
+}
+
+.tip-card {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  background: var(--lavender);
+  border-radius: 16px;
+  padding: 16px 18px;
+}
+.tip-num {
+  font-family: 'Baloo 2', sans-serif;
+  font-weight: 800;
+  color: var(--indigo);
+  font-size: 20px;
+  flex: none;
+}
+.safety-strip {
+  background: #FFF7E8;
+  border: 1px solid var(--amber);
+  color: var(--amber-deep);
+  padding: 14px 18px;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+}

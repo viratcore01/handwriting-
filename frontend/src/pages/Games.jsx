@@ -229,10 +229,12 @@ const GAMES = [
   { key: 'paper', title: 'Paper Worksheet Scan', desc: 'Take a photo of a paper worksheet and get instant scores.' },
 ]
 
-function GameShell({ gameKey, onComplete }) {
+function GameShell({ gameKey, onComplete, onStatus }) {
   const canvasRef = useRef(null)
   const onCompleteRef = useRef(onComplete)
+  const onStatusRef = useRef(onStatus)
   onCompleteRef.current = onComplete
+  onStatusRef.current = onStatus
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -243,7 +245,7 @@ function GameShell({ gameKey, onComplete }) {
 
     if (gameKey === 'spiral') cleanup = mountSpiralGame(canvas, ctx, onCompleteRef.current)
     else if (gameKey === 'bug') cleanup = mountBugGame(canvas, ctx, onCompleteRef.current)
-    else if (gameKey === 'wand') cleanup = mountWandGame(canvas, ctx, onCompleteRef.current)
+    else if (gameKey === 'wand') cleanup = mountWandGame(canvas, ctx, onCompleteRef.current, onStatusRef.current)
     else if (gameKey === 'sentence') cleanup = mountSentenceGame(canvas, ctx, onCompleteRef.current)
     else if (gameKey === 'paper') cleanup = mountPaperGame(canvas, ctx, onCompleteRef.current)
 
@@ -264,6 +266,7 @@ export default function Games() {
   const [banner, setBanner] = useState('Ready when you are')
   const [bannerColor, setBannerColor] = useState('green')
   const [gameDone, setGameDone] = useState(false)
+  const [gameRun, setGameRun] = useState(0)
 
   const currentGame = GAMES[gameIndex]
 
@@ -283,6 +286,7 @@ export default function Games() {
     setToast('')
     setBanner('Ready when you are')
     setBannerColor('green')
+    setGameRun((run) => run + 1)
   }, [])
 
   const onComplete = useCallback((message, color = 'green') => {
@@ -290,6 +294,11 @@ export default function Games() {
     setBannerColor(color)
     setTimeout(advanceGame, 500)
   }, [advanceGame])
+
+  const onStatus = useCallback((message, color = 'green') => {
+    setBanner(message)
+    setBannerColor(color)
+  }, [])
 
   return (
     <div className="max-w-4xl mx-auto p-6 animate-fade">
@@ -319,7 +328,7 @@ export default function Games() {
           <p className="muted" style={{ margin: '0 0 16px', fontSize: '14px' }}>{currentGame.desc}</p>
 
           <div className="canvas-shell mb-4">
-            <GameShell key={currentGame.key} gameKey={currentGame.key} onComplete={onComplete} />
+            <GameShell key={`${currentGame.key}-${gameRun}`} gameKey={currentGame.key} onComplete={onComplete} onStatus={onStatus} />
             <div className="coach-banner">
               <span className={`dot ${bannerColor}`}></span> {banner}
             </div>
@@ -495,10 +504,10 @@ function mountBugGame(canvas, ctx, onComplete) {
   }
 }
 
-function mountWandGame(canvas, ctx, onComplete) {
+function mountWandGame(canvas, ctx, onComplete, onStatus) {
   const cx = 300, cy = 300, R = 190
   const idealRune = generateRune(cx, cy, R)
-  let drawing = false, points = [], rafWatch = null, hideTimeout = null
+  let drawing = false, readyToTrace = false, points = [], rafWatch = null, hideTimeout = null
 
   function drawReveal(frac) {
     ctx.clearRect(0, 0, 600, 600)
@@ -526,11 +535,18 @@ function mountWandGame(canvas, ctx, onComplete) {
     const frac = Math.min((ts - watchStart) / 1800, 1)
     drawReveal(frac)
     if (frac < 1) rafWatch = requestAnimationFrame(watchStep)
-    else hideTimeout = setTimeout(() => onComplete('Your turn — trace the rune!', 'amber'), 500)
+    else {
+      hideTimeout = setTimeout(() => {
+        ctx.clearRect(0, 0, 600, 600)
+        readyToTrace = true
+        onStatus('Your turn — trace the rune from memory!', 'amber')
+      }, 500)
+    }
   }
   rafWatch = requestAnimationFrame(watchStep)
 
   function onDown(e) {
+    if (!readyToTrace) return
     canvas.setPointerCapture(e.pointerId)
     drawing = true
     points = [canvasPointFromEvent(e, canvas)]
@@ -559,7 +575,7 @@ function mountWandGame(canvas, ctx, onComplete) {
     drawing = false
     const validation = validateSession(points)
     if (validation.status === 'ERROR') {
-      onComplete(validation.reason, 'amber')
+      onStatus(validation.reason, 'amber')
       return
     }
     onComplete('Memory trace captured! Moving on…')

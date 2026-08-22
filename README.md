@@ -153,6 +153,7 @@ Frontend runs on `http://localhost:3000` and proxies `/api` → `http://localhos
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `GEMINI_API_KEY` | Yes | Google Gemini API key |
+| `GEMINI_MODEL` | No | Gemini vision model (defaults to `gemini-3.5-flash`) |
 | `SUPABASE_URL` | No | Supabase project URL (app runs without it) |
 | `SUPABASE_KEY` | No | Supabase anon key |
 | `WORKSHEET_ALIGNMENT_URL` | No | Public URL for alignment PDF |

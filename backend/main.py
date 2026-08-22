@@ -6,6 +6,7 @@ import os
 import json
 import uuid
 import base64
+import logging
 from datetime import datetime
 from dotenv import load_dotenv
 from supabase import create_client, Client
@@ -25,13 +26,16 @@ app.add_middleware(
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_API_KEY = (os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or "").strip()
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
+logger = logging.getLogger(__name__)
 
 supabase = None
 if SUPABASE_URL and SUPABASE_KEY and not SUPABASE_KEY.startswith("fake"):
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
+GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
+demo_scans = {}
 
 
 class ScanResult(BaseModel):
@@ -82,16 +86,14 @@ FALLBACK_RESULT = ScanResult(
 )
 
 
-def get_gemini_scores(image_bytes: bytes) -> ScanResult:
-    prompt = """Analyze this handwriting worksheet image. Rate three skills from 0-100:
-1. alignment: How level the writing sits on the line
-2. spacing: Consistency of gaps between letters and words
-3. curves: Smoothness of curved strokes
+def get_gemini_scores(image_bytes: bytes, mime_type: str) -> ScanResult:
+    prompt = """Score this handwriting worksheet image from 0 to 100 for:
+1. alignment: how level the writing sits on the line
+2. spacing: consistency of gaps between letters and words
+3. curves: smoothness of curved strokes
 
-Return ONLY valid JSON with these exact keys:
-{"alignment": 0-100, "spacing": 0-100, "curves": 0-100, "explanation_alignment": "brief plain language note", "explanation_spacing": "brief plain language note", "explanation_curves": "brief plain language note"}
-
-Do not include any other text or markdown formatting."""
+Return only a JSON object with these keys: alignment, spacing, curves,
+explanation_alignment, explanation_spacing, explanation_curves. Keep every explanation under 16 words."""
 
     payload = {
         "contents": [
@@ -100,7 +102,7 @@ Do not include any other text or markdown formatting."""
                     {"text": prompt},
                     {
                         "inlineData": {
-                            "mimeType": "image/jpeg",
+                            "mimeType": mime_type,
                             "data": base64.b64encode(image_bytes).decode("utf-8"),
                         }
                     },
@@ -108,15 +110,17 @@ Do not include any other text or markdown formatting."""
             }
         ],
         "generationConfig": {
-            "temperature": 0.2,
-            "maxOutputTokens": 300,
+            "maxOutputTokens": 400,
+            "responseMimeType": "application/json",
+            "thinkingConfig": {"thinkingLevel": "minimal"},
         },
     }
 
     try:
         with httpx.Client(timeout=30.0) as client:
             response = client.post(
-                f"{GEMINI_URL}?key={GEMINI_API_KEY}",
+                GEMINI_URL,
+                headers={"x-goog-api-key": GEMINI_API_KEY},
                 json=payload,
             )
             response.raise_for_status()
@@ -138,7 +142,8 @@ Do not include any other text or markdown formatting."""
             is_fallback=False,
         )
         return scores
-    except Exception:
+    except Exception as exc:
+        logger.warning("Gemini worksheet analysis failed: %s", exc)
         return FALLBACK_RESULT
 
 
@@ -181,7 +186,8 @@ async def create_scan(student_id: str, file: UploadFile = File(...)):
     else:
         public_url = "http://example.com/placeholder.jpg"
 
-    scores = get_gemini_scores(image_bytes) if GEMINI_API_KEY else FALLBACK_RESULT
+    image_mime_type = file.content_type if file.content_type and file.content_type.startswith("image/") else "image/jpeg"
+    scores = get_gemini_scores(image_bytes, image_mime_type) if GEMINI_API_KEY else FALLBACK_RESULT
 
     scan_data = {
         "id": "scan_" + uuid.uuid4().hex[:12],
@@ -202,8 +208,22 @@ async def create_scan(student_id: str, file: UploadFile = File(...)):
         row = result.data[0]
     else:
         row = scan_data
+        demo_scans[row["id"]] = row
 
     return ScanResponse(**row, is_fallback=scores.is_fallback)
+
+
+@app.get("/api/scans/{scan_id}", response_model=ScanResponse)
+async def get_scan(scan_id: str):
+    if supabase:
+        result = supabase.table("scans").select("*").eq("id", scan_id).limit(1).execute()
+        row = result.data[0] if result.data else None
+    else:
+        row = demo_scans.get(scan_id)
+
+    if not row:
+        raise HTTPException(status_code=404, detail="Scan not found")
+    return ScanResponse(**row)
 
 
 @app.patch("/api/scans/{scan_id}", response_model=ScanResponse)

@@ -9,11 +9,13 @@ export default function Results() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/students/s0/scans`)
-      .then(r => r.json())
+    fetch(`${API_BASE}/api/scans/${scanId}`)
+      .then(r => {
+        if (!r.ok) throw new Error('Scan not found')
+        return r.json()
+      })
       .then(data => {
-        const found = data.find(s => s.id === scanId)
-        setScan(found)
+        setScan(data)
         setLoading(false)
       })
       .catch(() => setLoading(false))

@@ -60,6 +60,18 @@ export default function Scan() {
       <p className="text-ink-soft mb-6">Take a clear photo of a completed handwriting worksheet.</p>
 
       <div className="card mb-6">
+        <label className="block text-sm font-semibold text-ink-soft mb-2">Student</label>
+        <select
+          value={studentId}
+          onChange={e => navigate(`/scan?student=${e.target.value}`)}
+          className="w-full p-3 rounded-xl border-2 border-line bg-surface text-ink font-semibold focus:border-indigo focus:outline-none mb-4"
+        >
+          <option value="s0">Aarav K.</option>
+          <option value="s1">Sara M.</option>
+          <option value="s2">Diya P.</option>
+          <option value="s3">Kabir S.</option>
+        </select>
+
         <div
           onClick={() => fileRef.current?.click()}
           className="border-2 border-dashed border-indigo/40 rounded-2xl p-10 text-center cursor-pointer hover:bg-lavender/30 transition-colors"

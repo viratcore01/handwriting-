@@ -119,6 +119,22 @@ export default function Practice() {
           <button onClick={() => navigate('/home')} className="btn btn-primary">Go Home</button>
         </div>
       )}
+
+      <div className="card mt-6">
+        <div className="eyebrow">Progress Ladder</div>
+        <h3 style={{ margin: '6px 0 12px' }}>Shapes → Letters → Words</h3>
+        <div className="ladder">
+          {['Rung 1: Large Shapes', 'Rung 2: Letters (ABCD Practice)', 'Rung 3: Full Context Words'].map((r, i) => (
+            <div key={i} className={`rung ${i === practiceLevel ? 'current' : ''} ${i < practiceLevel ? 'unlocked' : ''}`}>
+              <div className="rung-idx">{i + 1}</div>
+              <div>{r}{i === practiceLevel ? ' — Active Practice Focus' : i < practiceLevel ? ' — ✓ Unlocked & Mastered' : ' — Locked'}</div>
+            </div>
+          ))}
+        </div>
+        <div className="safety-strip mt-4" style={{ fontSize: '12.5px' }}>
+          <strong>Target:</strong> Trace with <strong>85%+ accuracy</strong> to advance. Below 85% repeats with a geometric primer.
+        </div>
+      </div>
     </div>
   )
 }

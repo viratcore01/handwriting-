@@ -19,12 +19,11 @@ services:
       - key: WORKSHEET_CURVES_URL
         sync: false
 
-  - type: web
+  - type: static
     name: handwriting-frontend
-    runtime: static
-    rootDir: frontend
     buildCommand: npm install && npm run build
-    staticPublishPath: dist
+    publishPath: dist
+    rootDir: frontend
     nodeVersion: 20
     envVars:
       - key: VITE_API_URL

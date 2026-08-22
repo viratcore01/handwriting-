@@ -42,10 +42,10 @@ export default function StudentHome() {
             <p>Take a photo of a paper worksheet to get instant scores and feedback.</p>
           </button>
 
-          <button onClick={() => navigate(`/practice?student=${selectedStudent}`)} className="big-action-btn secondary">
+          <button onClick={() => navigate(`/games?student=${selectedStudent}`)} className="big-action-btn secondary">
             <span className="tag" style={{ background: 'rgba(4,56,42,0.15)', padding: '4px 10px', borderRadius: '999px', fontSize: '12px', fontWeight: 700, display: 'inline-block' }}>Exercise</span>
-            <h3>✍️ Practice Worksheet</h3>
-            <p>Open a practice PDF and print it to build skills.</p>
+            <h3>🎮 Live Practice Games</h3>
+            <p>Play 5 tracing games with real-time coaching.</p>
           </button>
         </div>
 

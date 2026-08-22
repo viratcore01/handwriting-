@@ -4,6 +4,7 @@ import StudentHome from './pages/StudentHome'
 import Scan from './pages/Scan'
 import Results from './pages/Results'
 import Practice from './pages/Practice'
+import Games from './pages/Games'
 import Progress from './pages/Progress'
 import TeacherDashboard from './pages/TeacherDashboard'
 import StudentProfile from './pages/StudentProfile'
@@ -22,6 +23,7 @@ export default function App() {
         <Route path="/scan" element={<Scan />} />
         <Route path="/results/:scanId" element={<Results />} />
         <Route path="/practice" element={<Practice />} />
+        <Route path="/games" element={<Games />} />
         <Route path="/progress" element={<Progress />} />
         <Route path="/teacher" element={<TeacherDashboard />} />
         <Route path="/student/:studentId" element={<StudentProfile />} />

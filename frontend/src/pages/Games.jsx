@@ -485,8 +485,7 @@ function mountBugGame(canvas, ctx, helpers) {
     const sx = canvas.width / rect.width, sy = canvas.height / rect.height
     lastPlayer = { x: (e.clientX - rect.left) * sx, y: (e.clientY - rect.top) * sy }
   }
-  canvas.addEventListener('pointermove', pointerMove)
-  canvas.addEventListener('pointerdown', (e) => {
+  function pointerDown(e) {
     if (running) return
     canvas.setPointerCapture(e.pointerId)
     running = true
@@ -497,7 +496,10 @@ function mountBugGame(canvas, ctx, helpers) {
     const sx = canvas.width / rect.width, sy = canvas.height / rect.height
     lastPlayer = { x: (e.clientX - rect.left) * sx, y: (e.clientY - rect.top) * sy }
     raf = requestAnimationFrame(loop)
-  })
+  }
+  canvas.addEventListener('pointermove', pointerMove)
+  canvas.addEventListener('pointerdown', pointerDown)
+
   setBanner('Tap on the bug to start')
   setBannerColor('green')
 
@@ -505,6 +507,7 @@ function mountBugGame(canvas, ctx, helpers) {
     running = false
     cancelAnimationFrame(raf)
     canvas.removeEventListener('pointermove', pointerMove)
+    canvas.removeEventListener('pointerdown', pointerDown)
   }
 }
 
@@ -535,14 +538,16 @@ function mountWandGame(canvas, ctx, helpers) {
   }
 
   let watchStart = null
+  let hideTimeout = null
+  let rafWatch = null
   function watchStep(ts) {
     if (!watchStart) watchStart = ts
     const frac = Math.min((ts - watchStart) / 1800, 1)
     drawReveal(frac)
-    if (frac < 1) requestAnimationFrame(watchStep)
-    else setTimeout(startHidePhase, 500)
+    if (frac < 1) rafWatch = requestAnimationFrame(watchStep)
+    else hideTimeout = setTimeout(startHidePhase, 500)
   }
-  requestAnimationFrame(watchStep)
+  rafWatch = requestAnimationFrame(watchStep)
 
   function startHidePhase() {
     ctx.clearRect(0, 0, 600, 600)
@@ -594,6 +599,8 @@ function mountWandGame(canvas, ctx, helpers) {
   canvas.addEventListener('pointerup', onUp)
 
   return () => {
+    cancelAnimationFrame(rafWatch)
+    clearTimeout(hideTimeout)
     canvas.removeEventListener('pointerdown', onDown)
     canvas.removeEventListener('pointermove', onMove)
     canvas.removeEventListener('pointerup', onUp)
@@ -627,6 +634,7 @@ function mountSentenceGame(canvas, ctx, helpers) {
 
   let strokes = [], current = null
   const flatGuide = letterStrokes.flat()
+  let doneBtn = null
 
   function onDown(e) {
     canvas.setPointerCapture(e.pointerId)
@@ -663,30 +671,31 @@ function mountSentenceGame(canvas, ctx, helpers) {
   canvas.addEventListener('pointermove', onMove)
   canvas.addEventListener('pointerup', onUp)
 
-  setTimeout(() => {
-    const controls = canvas.parentElement?.querySelector('.game-controls')
-    if (controls) {
-      const doneBtn = document.createElement('button')
-      doneBtn.className = 'btn btn-mint'
-      doneBtn.textContent = 'Done Tracing →'
-      doneBtn.addEventListener('click', () => {
-        const allPts = strokes.flat()
-        if (allPts.length < 20) {
-          setToast('Trace a bit more of the word before finishing.')
-          return
-        }
-        setBanner('Word "HERO" recognized!')
-        setBannerColor('green')
-        setTimeout(advanceGame, 800)
-      })
-      controls.appendChild(doneBtn)
-    }
-  }, 100)
+  const controls = canvas.parentElement?.querySelector('.game-controls')
+  if (controls) {
+    doneBtn = document.createElement('button')
+    doneBtn.className = 'btn btn-mint'
+    doneBtn.textContent = 'Done Tracing →'
+    doneBtn.addEventListener('click', () => {
+      const allPts = strokes.flat()
+      if (allPts.length < 20) {
+        setToast('Trace a bit more of the word before finishing.')
+        return
+      }
+      setBanner('Word "HERO" recognized!')
+      setBannerColor('green')
+      setTimeout(advanceGame, 800)
+    })
+    controls.appendChild(doneBtn)
+  }
 
   return () => {
     canvas.removeEventListener('pointerdown', onDown)
     canvas.removeEventListener('pointermove', onMove)
     canvas.removeEventListener('pointerup', onUp)
+    if (doneBtn && doneBtn.parentNode) {
+      doneBtn.parentNode.removeChild(doneBtn)
+    }
     strokes = []
     current = null
   }
@@ -715,27 +724,28 @@ function mountPaperGame(canvas, ctx, helpers) {
   setBanner('Worksheet loaded — analyze when ready')
   setBannerColor('green')
 
-  setTimeout(() => {
-    const controls = canvas.parentElement?.querySelector('.game-controls')
-    if (controls) {
-      const analyzeBtn = document.createElement('button')
-      analyzeBtn.className = 'btn btn-primary'
-      analyzeBtn.textContent = 'Analyze Worksheet →'
-      analyzeBtn.addEventListener('click', () => {
-        setBanner('Analyzing worksheet...')
-        setBannerColor('amber')
-        setTimeout(() => {
-          setBanner('Analysis complete!')
-          setBannerColor('green')
-          setTimeout(advanceGame, 500)
-        }, 1500)
-      })
-      controls.appendChild(analyzeBtn)
-    }
-  }, 100)
+  let analyzeBtn = null
+  const controls = canvas.parentElement?.querySelector('.game-controls')
+  if (controls) {
+    analyzeBtn = document.createElement('button')
+    analyzeBtn.className = 'btn btn-primary'
+    analyzeBtn.textContent = 'Analyze Worksheet →'
+    analyzeBtn.addEventListener('click', () => {
+      setBanner('Analyzing worksheet...')
+      setBannerColor('amber')
+      setTimeout(() => {
+        setBanner('Analysis complete!')
+        setBannerColor('green')
+        setTimeout(advanceGame, 500)
+      }, 1500)
+    })
+    controls.appendChild(analyzeBtn)
+  }
 
   return () => {
-    // nothing to cleanup for static paper game
+    if (analyzeBtn && analyzeBtn.parentNode) {
+      analyzeBtn.parentNode.removeChild(analyzeBtn)
+    }
   }
 }
 

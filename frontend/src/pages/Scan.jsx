@@ -1,0 +1,102 @@
+import { useState, useRef } from 'react'
+import { useSearchParams, useNavigate } from 'react-router-dom'
+import { API_BASE } from '../App'
+
+export default function Scan() {
+  const [searchParams] = useSearchParams()
+  const studentId = searchParams.get('student')
+  const navigate = useNavigate()
+  const [preview, setPreview] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [scanId, setScanId] = useState(null)
+  const fileRef = useRef()
+
+  const handleFile = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    setPreview(URL.createObjectURL(file))
+    setError(null)
+  }
+
+  const handleSubmit = async () => {
+    if (!preview || !studentId) return
+    setLoading(true)
+    setError(null)
+    try {
+      const formData = new FormData()
+      const blob = await fetch(preview).then(r => r.blob())
+      formData.append('file', blob, 'worksheet.jpg')
+
+      const res = await fetch(`${API_BASE}/api/scans?student_id=${studentId}`, {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!res.ok) throw new Error('Scan failed')
+      const data = await res.json()
+      setScanId(data.id)
+      navigate(`/results/${data.id}`)
+    } catch (err) {
+      setError(err.message || 'Something went wrong. Please try again.')
+      setLoading(false)
+    }
+  }
+
+  if (scanId) {
+    return (
+      <div className="max-w-2xl mx-auto p-6 animate-fade text-center py-20">
+        <div className="w-16 h-16 border-4 border-lavender border-t-indigo rounded-full animate-spin-slow mx-auto mb-6"></div>
+        <h2 className="text-2xl font-bold mb-2">Analyzing your worksheet...</h2>
+        <p className="text-ink-soft">This usually takes a few seconds.</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="max-w-2xl mx-auto p-6 animate-fade">
+      <button onClick={() => navigate('/home')} className="back-link mb-4">← Back to home</button>
+      <h1 className="text-3xl font-bold mb-1">Scan Worksheet</h1>
+      <p className="text-ink-soft mb-6">Take a clear photo of a completed handwriting worksheet.</p>
+
+      <div className="card mb-6">
+        <div
+          onClick={() => fileRef.current?.click()}
+          className="border-2 border-dashed border-indigo/40 rounded-2xl p-10 text-center cursor-pointer hover:bg-lavender/30 transition-colors"
+        >
+          {preview ? (
+            <img src={preview} alt="Preview" className="max-h-80 mx-auto rounded-xl" />
+          ) : (
+            <div>
+              <div className="text-5xl mb-3">📷</div>
+              <p className="font-semibold text-ink mb-1">Tap to take a photo</p>
+              <p className="text-sm text-ink-soft">Use your camera to photograph the worksheet</p>
+            </div>
+          )}
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={handleFile}
+            className="hidden"
+          />
+        </div>
+      </div>
+
+      {error && (
+        <div className="bg-amber/10 border border-amber text-amber-deep p-4 rounded-2xl mb-4 font-semibold text-center">
+          {error}
+        </div>
+      )}
+
+      <button
+        onClick={handleSubmit}
+        disabled={!preview || loading}
+        className="btn btn-primary btn-block"
+      >
+        {loading ? 'Analyzing...' : 'Analyze Worksheet'}
+      </button>
+    </div>
+  )
+}

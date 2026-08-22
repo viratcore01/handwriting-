@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --indigo: #4F46E5;
+    --indigo-dark: #3C34C4;
+    --mint: #34D399;
+    --mint-deep: #0F9D6B;
+    --amber: #F59E0B;
+    --amber-deep: #B97008;
+    --offwhite: #FAFAFA;
+    --ink: #211C3A;
+    --ink-soft: #5B5478;
+    --surface: #FFFFFF;
+    --lavender: #EEF0FF;
+    --lavender-deep: #E1E4FB;
+    --line: #E5E2F5;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background:
+      radial-gradient(1100px 500px at 15% -10%, #EEF0FF 0%, transparent 60%),
+      radial-gradient(900px 500px at 110% 10%, #E7FBF3 0%, transparent 55%),
+      var(--offwhite);
+    color: var(--ink);
+    font-family: 'Inter', system-ui, sans-serif;
+    min-height: 100vh;
+  }
+  h1, h2, h3, .display { font-family: 'Baloo 2', 'Inter', sans-serif; letter-spacing: 0.2px; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+}
+
+@layer components {
+  .btn {
+    border: none;
+    border-radius: 14px;
+    padding: 14px 22px;
+    font-weight: 700;
+    font-size: 15px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+    transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.15s ease;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .btn-primary { background: var(--indigo); color: #fff; box-shadow: 0 8px 20px -8px rgba(79,70,229,0.55); }
+  .btn-primary:hover { background: var(--indigo-dark); transform: translateY(-1px); }
+  .btn-ghost { background: var(--lavender); color: var(--indigo); }
+  .btn-ghost:hover { background: var(--lavender-deep); }
+  .btn-mint { background: var(--mint); color: #04382A; }
+  .btn-mint:hover { filter: brightness(0.97); }
+  .btn[disabled] { opacity: 0.45; cursor: not-allowed; }
+  .btn-block { width: 100%; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    box-shadow: 0 4px 14px -6px rgba(33,28,58,0.15);
+    padding: 26px;
+    position: relative;
+  }
+}
+
+@keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+.animate-fade { animation: fade 0.35s ease; }
+.animate-spin-slow { animation: spin 1s linear infinite; }

@@ -231,24 +231,26 @@ const GAMES = [
 
 function GameShell({ gameKey, onComplete }) {
   const canvasRef = useRef(null)
-  const helpersRef = useRef(null)
+  const onCompleteRef = useRef(onComplete)
+  onCompleteRef.current = onComplete
 
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
+    ctx.clearRect(0, 0, 600, 600)
     let cleanup = null
 
-    if (gameKey === 'spiral') cleanup = mountSpiralGame(canvas, ctx, onComplete)
-    else if (gameKey === 'bug') cleanup = mountBugGame(canvas, ctx, onComplete)
-    else if (gameKey === 'wand') cleanup = mountWandGame(canvas, ctx, onComplete)
-    else if (gameKey === 'sentence') cleanup = mountSentenceGame(canvas, ctx, onComplete)
-    else if (gameKey === 'paper') cleanup = mountPaperGame(canvas, ctx, onComplete)
+    if (gameKey === 'spiral') cleanup = mountSpiralGame(canvas, ctx, onCompleteRef.current)
+    else if (gameKey === 'bug') cleanup = mountBugGame(canvas, ctx, onCompleteRef.current)
+    else if (gameKey === 'wand') cleanup = mountWandGame(canvas, ctx, onCompleteRef.current)
+    else if (gameKey === 'sentence') cleanup = mountSentenceGame(canvas, ctx, onCompleteRef.current)
+    else if (gameKey === 'paper') cleanup = mountPaperGame(canvas, ctx, onCompleteRef.current)
 
     return () => {
       if (cleanup && typeof cleanup === 'function') cleanup()
     }
-  }, [gameKey, onComplete])
+  }, [gameKey])
 
   return (
     <canvas ref={canvasRef} width="600" height="600" />

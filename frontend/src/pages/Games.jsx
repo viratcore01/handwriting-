@@ -476,12 +476,20 @@ function mountBugGame(canvas, ctx, onComplete) {
     lastPlayer = { x: (e.clientX - rect.left) * sx, y: (e.clientY - rect.top) * sy }
     raf = requestAnimationFrame(loop)
   }
+  function pointerMove(e) {
+    if (!running) return
+    const rect = canvas.getBoundingClientRect()
+    const sx = canvas.width / rect.width, sy = canvas.height / rect.height
+    lastPlayer = { x: (e.clientX - rect.left) * sx, y: (e.clientY - rect.top) * sy }
+  }
   canvas.addEventListener('pointerdown', pointerDown)
+  canvas.addEventListener('pointermove', pointerMove)
 
   return () => {
     running = false
     cancelAnimationFrame(raf)
     canvas.removeEventListener('pointerdown', pointerDown)
+    canvas.removeEventListener('pointermove', pointerMove)
   }
 }
 

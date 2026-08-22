@@ -6,7 +6,9 @@
         },
         "backend": {
             "root": "backend",
-            "entrypoint": "main:app"
+            "entrypoint": "main:app",
+            "runtime": "python3.12",
+            "buildCommand": "pip install -r requirements.txt"
         }
     },
     "rewrites": [
